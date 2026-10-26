@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ARYA — Personal AI</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+
+    <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+
+    <!-- LOADING SCREEN -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-arc">
+            <svg viewBox="0 0 100 100" class="arc-svg">
+                <circle cx="50" cy="50" r="42" class="arc-track" />
+                <circle cx="50" cy="50" r="42" class="arc-spinner" />
+            </svg>
+            <div class="arc-nucleus"></div>
+        </div>
+        <div class="loading-text">INITIALIZING ARYA</div>
+        <div class="loading-bar"><div class="loading-fill"></div></div>
+    </div>
+
+    <!-- BACKGROUND -->
+    <div class="bg-layer"></div>
+    <div class="bg-grid"></div>
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- TOP BAR -->
+    <header class="top-bar">
+        <button class="icon-btn" id="sidebarToggle" title="Toggle Chats Sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <div class="brand">
+            <div class="brand-logo">✦</div>
+            <div class="brand-text">
+                <h1>ARYA</h1>
+                <span>PERSONAL AI · v2.2</span>
+            </div>
+        </div>
+
+        <div class="status-pill">
+            <span class="status-dot" id="statusDot"></span>
+            <span class="status-label" id="statusLabel">CONNECTING</span>
+        </div>
+
+        <div class="top-actions">
+            <button class="icon-btn" id="commandBtn" title="Command Palette (Ctrl+K)">
+                <i class="fas fa-terminal"></i>
+            </button>
+            <button class="icon-btn" id="historyBtn" title="Chat History">
+                <i class="fas fa-clock-rotate-left"></i>
+            </button>
+            <button class="icon-btn" id="fullscreenBtn" title="Fullscreen">
+                <i class="fas fa-expand"></i>
+            </button>
+            <button class="icon-btn" id="themeToggle" title="Toggle Theme">
+                <i class="fas fa-sun"></i>
+            </button>
+            <button class="icon-btn" id="settingsBtn" title="Settings">
+                <i class="fas fa-cog"></i>
+            </button>
+            <div class="clock" id="clock">00:00:00</div>
+        </div>
+    </header>
+
+    <!-- CHAT SIDEBAR -->
+    <aside class="chat-sidebar" id="chatSidebar">
+        <div class="chat-sidebar-header">
+            <button class="new-chat-btn" id="newChatBtn">
+                <i class="fas fa-plus"></i>
+                <span>New Chat</span>
+            </button>
+            <button class="sidebar-close-btn" id="sidebarClose" title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="chat-sidebar-search">
+            <i class="fas fa-search"></i>
+            <input type="text" id="chatSearchInput" placeholder="Search chats..." autocomplete="off"/>
+        </div>
+
+        <div class="chat-list" id="chatList"></div>
+
+        <div class="chat-sidebar-footer">
+            <span class="chat-count" id="chatCount">0 chats</span>
+        </div>
+    </aside>
+
+    <div class="chat-sidebar-overlay" id="chatSidebarOverlay"></div>
+
+    <!-- MAIN GRID -->
+    <main class="main-grid" id="mainGrid">
+
+        <!-- LEFT PANEL -->
+        <aside class="side-panel left-panel">
+            <div class="greeting-box">
+                <div class="greeting-text" id="greetingText">Good evening</div>
+                <div class="greeting-sub" id="greetingSub">Ready when you are</div>
+            </div>
+
+            <div class="panel-header">
+                <i class="fas fa-wave-square"></i>
+                <span>ACTIVITY</span>
+            </div>
+            <div class="activity-list" id="activityList">
+                <div class="activity-item">
+                    <span class="time">Now</span>
+                    <span class="text">ARYA is initializing...</span>
+                </div>
+            </div>
+
+            <div class="panel-header second">
+                <i class="fas fa-microchip"></i>
+                <span>BRAIN</span>
+            </div>
+            <div class="brain-info">
+                <div class="brain-row">
+                    <span class="brain-label">Provider</span>
+                    <span class="brain-value" id="brainProvider">—</span>
+                </div>
+                <div class="brain-row">
+                    <span class="brain-label">Model</span>
+                    <span class="brain-value" id="brainModel">—</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CENTER STAGE -->
+        <section class="center-stage">
+            <div class="avatar-wrap" id="avatarWrap">
+                <div class="avatar-ring outer"></div>
+                <div class="avatar-ring mid"></div>
+                <div class="avatar-ring inner"></div>
+                <div class="avatar-ring ring-4"></div>
+                <div class="avatar-core">
+                    <img id="aryaImage" src="/static/arya_dark1.png" alt="ARYA" />
+                    <div class="avatar-scan"></div>
+                </div>
+                <div class="avatar-glow"></div>
+            </div>
+
+            <canvas class="audio-vis" id="audioVis" width="400" height="50"></canvas>
+
+            <div class="voice-wave" id="voiceWave">
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+
+            <div class="state-text" id="stateText">Ready</div>
+
+            <div class="screenshot-preview" id="screenshotPreview">
+                <img id="screenshotImg" alt="preview"/>
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL -->
+        <aside class="side-panel right-panel">
+            <div class="right-panel-inner">
+
+                <div class="right-section system-section">
+                    <div class="panel-header">
+                        <i class="fas fa-chart-simple"></i>
+                        <span>SYSTEM</span>
+                    </div>
+
+                    <div class="stat-row">
+                        <div class="stat-icon"><i class="fas fa-battery-three-quarters"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-top">
+                                <span class="stat-name">Battery</span>
+                                <span class="stat-value" id="batteryValue">—</span>
+                            </div>
+                            <div class="stat-bar"><div class="stat-fill" id="batteryFill"></div></div>
+                            <canvas class="sparkline" id="batterySpark" width="200" height="24"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="stat-row">
+                        <div class="stat-icon"><i class="fas fa-microchip"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-top">
+                                <span class="stat-name">CPU</span>
+                                <span class="stat-value" id="cpuValue">—</span>
+                            </div>
+                            <div class="stat-bar"><div class="stat-fill" id="cpuFill"></div></div>
+                            <canvas class="sparkline" id="cpuSpark" width="200" height="24"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="stat-row">
+                        <div class="stat-icon"><i class="fas fa-memory"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-top">
+                                <span class="stat-name">RAM</span>
+                                <span class="stat-value" id="ramValue">—</span>
+                            </div>
+                            <div class="stat-bar"><div class="stat-fill" id="ramFill"></div></div>
+                            <canvas class="sparkline" id="ramSpark" width="200" height="24"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="right-section quick-section">
+                    <div class="panel-header">
+                        <i class="fas fa-bolt"></i>
+                        <span>QUICK ACTIONS</span>
+                    </div>
+                    <div class="quick-grid" id="quickGrid"></div>
+                </div>
+
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- CHAT DOCK -->
+    <div class="chat-dock" id="chatDock">
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="msg arya">
+                <div class="msg-bubble">
+                    <span class="msg-author">ARYA</span>
+                    <span class="msg-text">Hey! I'm ARYA. Ask me anything, or say "Arya" to wake me up.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="typing-row" id="typingRow" style="display:none;">
+            <span>ARYA is thinking</span>
+            <div class="dots"><span></span><span></span><span></span></div>
+        </div>
+
+        <div class="chat-input-row">
+            <div class="wake-indicator" id="wakeIndicator" title="Wake word status"></div>
+            <button class="dock-btn" id="micBtn" title="Voice input">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <button class="dock-btn attach-btn" id="attachBtn" title="Attach file (PDF, DOCX, TXT)">
+                <i class="fas fa-paperclip"></i>
+            </button>
+            <input type="file" id="fileInput" style="display:none;" accept=".pdf,.docx,.txt,.md,.csv,.py,.js,.json"/>
+            <input type="text" id="userInput" placeholder="Type a message or attach file..." autocomplete="off"/>
+            <button class="dock-btn send" id="sendBtn" title="Send">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+
+        <div class="file-preview" id="filePreview">
+            <div class="file-preview-icon">
+                <i class="fas fa-file" id="filePreviewIcon"></i>
+            </div>
+            <div class="file-preview-info">
+                <div class="file-preview-name" id="filePreviewName">filename.pdf</div>
+                <div class="file-preview-size" id="filePreviewSize">0 KB</div>
+            </div>
+            <button class="file-preview-remove" id="filePreviewRemove" title="Remove">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         VIRTUAL KEYBOARD — JARVIS HOLOGRAPHIC STYLE
+         ============================================================ -->
+    <div class="vk-toggle-row">
+        <button class="vk-toggle-btn active" id="vkToggleBtn" title="Show/Hide Keyboard">
+            <i class="fas fa-keyboard"></i>
+            <span>Keyboard</span>
+        </button>
+    </div>
+
+    <div class="vk-container" id="vkContainer">
+
+        <!-- DRAG HANDLE -->
+        <div class="vk-drag-handle" id="vkDragHandle">
+            <div class="vk-drag-left">
+                <i class="fas fa-grip-lines"></i>
+                <span>ARYA KEYBOARD · JARVIS MODE</span>
+            </div>
+            <div class="vk-drag-right">
+                <button class="vk-ctrl-btn" id="vkMinimizeBtn" title="Minimize">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="vk-ctrl-btn" id="vkCloseBtn" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- KEYBOARD BODY -->
+        <div class="vk-body" id="vkBody">
+            
+            <!-- LEFT PANEL (Angled) -->
+            <div class="vk-left-panel">
+                <div class="vk-header-row">
+                    <div class="vk-header-text">FILE MANAGEMENT</div>
+                </div>
+                <div class="vk-header-row">
+                    <div class="vk-header-text small">PROGRAMMING</div>
+                </div>
+                
+                <div class="vk-row-left">
+                    <button class="vk-key vk-key-dark" data-key="Tab">TAB</button>
+                    <button class="vk-key vk-key-dark" data-key="CapsLock">CAPS</button>
+                    <button class="vk-key vk-key-dark" data-key="Shift">SHIFT</button>
+                    <button class="vk-key vk-key-dark" data-key="Ctrl">CTRL</button>
+                    <button class="vk-key vk-key-dark" data-key="Alt">ALT</button>
+                </div>
+                <div class="vk-row-left">
+                    <button class="vk-key vk-key-dark" data-key="q">Q</button>
+                    <button class="vk-key vk-key-dark" data-key="w">W</button>
+                    <button class="vk-key vk-key-dark" data-key="e">E</button>
+                    <button class="vk-key vk-key-dark" data-key="r">R</button>
+                    <button class="vk-key vk-key-dark" data-key="t">T</button>
+                </div>
+                <div class="vk-row-left">
+                    <button class="vk-key vk-key-dark" data-key="a">A</button>
+                    <button class="vk-key vk-key-dark" data-key="s">S</button>
+                    <button class="vk-key vk-key-dark" data-key="d">D</button>
+                    <button class="vk-key vk-key-dark" data-key="f">F</button>
+                    <button class="vk-key vk-key-dark" data-key="g">G</button>
+                </div>
+                <div class="vk-row-left">
+                    <button class="vk-key vk-key-dark" data-key="z">Z</button>
+                    <button class="vk-key vk-key-dark" data-key="x">X</button>
+                    <button class="vk-key vk-key-dark" data-key="c">C</button>
+                    <button class="vk-key vk-key-dark" data-key="v">V</button>
+                    <button class="vk-key vk-key-dark" data-key="b">B</button>
+                </div>
+            </div>
+
+            <!-- CENTER COLUMN (Vertical) -->
+            <div class="vk-center-col">
+                <div class="vk-vertical-key" data-key="Backspace">BACKSPACE</div>
+                <div class="vk-vertical-key" data-key="Enter">ENTER</div>
+                <div class="vk-vertical-key" data-key=" ">SPACE</div>
+            </div>
+
+            <!-- RIGHT PANEL (Main QWERTY) -->
+            <div class="vk-right-panel">
+                <div class="vk-row-right">
+                    <button class="vk-key" data-key="1">1</button>
+                    <button class="vk-key" data-key="2">2</button>
+                    <button class="vk-key" data-key="3">3</button>
+                    <button class="vk-key" data-key="4">4</button>
+                    <button class="vk-key" data-key="5">5</button>
+                    <button class="vk-key" data-key="6">6</button>
+                    <button class="vk-key" data-key="7">7</button>
+                    <button class="vk-key" data-key="8">8</button>
+                    <button class="vk-key" data-key="9">9</button>
+                    <button class="vk-key" data-key="0">0</button>
+                    <button class="vk-key" data-key="-">-</button>
+                    <button class="vk-key" data-key="=">=</button>
+                </div>
+                
+                <div class="vk-row-right">
+                    <button class="vk-key" data-key="q">Q</button>
+                    <button class="vk-key" data-key="w">W</button>
+                    <button class="vk-key" data-key="e">E</button>
+                    <button class="vk-key" data-key="r">R</button>
+                    <button class="vk-key" data-key="t">T</button>
+                    <button class="vk-key" data-key="y">Y</button>
+                    <button class="vk-key" data-key="u">U</button>
+                    <button class="vk-key" data-key="i">I</button>
+                    <button class="vk-key" data-key="o">O</button>
+                    <button class="vk-key" data-key="p">P</button>
+                    <button class="vk-key" data-key="[">[</button>
+                    <button class="vk-key" data-key="]">]</button>
+                </div>
+                
+                <div class="vk-row-right">
+                    <button class="vk-key" data-key="a">A</button>
+                    <button class="vk-key" data-key="s">S</button>
+                    <button class="vk-key" data-key="d">D</button>
+                    <button class="vk-key" data-key="f">F</button>
+                    <button class="vk-key" data-key="g">G</button>
+                    <button class="vk-key" data-key="h">H</button>
+                    <button class="vk-key" data-key="j">J</button>
+                    <button class="vk-key" data-key="k">K</button>
+                    <button class="vk-key" data-key="l">L</button>
+                    <button class="vk-key" data-key=";">;</button>
+                    <button class="vk-key" data-key="'">'</button>
+                </div>
+                
+                <div class="vk-row-right">
+                    <button class="vk-key" data-key="z">Z</button>
+                    <button class="vk-key" data-key="x">X</button>
+                    <button class="vk-key" data-key="c">C</button>
+                    <button class="vk-key" data-key="v">V</button>
+                    <button class="vk-key" data-key="b">B</button>
+                    <button class="vk-key" data-key="n">N</button>
+                    <button class="vk-key" data-key="m">M</button>
+                    <button class="vk-key" data-key=",">,</button>
+                    <button class="vk-key" data-key=".">.</button>
+                    <button class="vk-key" data-key="/">/</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 4 CORNER RESIZE HANDLES -->
+        <div class="vk-resize-handle vk-resize-tl" data-corner="tl" title="Resize (top-left)"></div>
+        <div class="vk-resize-handle vk-resize-tr" data-corner="tr" title="Resize (top-right)"></div>
+        <div class="vk-resize-handle vk-resize-bl" data-corner="bl" title="Resize (bottom-left)"></div>
+        <div class="vk-resize-handle vk-resize-br" data-corner="br" title="Resize (bottom-right)"></div>
+
+    </div>
+
+    <!-- COMMAND PALETTE -->
+    <div class="cmd-palette" id="cmdPalette">
+        <div class="cmd-palette-inner">
+            <div class="cmd-search">
+                <i class="fas fa-search"></i>
+                <input type="text" id="cmdInput" placeholder="Type a command..."/>
+            </div>
+            <div class="cmd-list" id="cmdList"></div>
+            <div class="cmd-hint">↑↓ navigate · Enter run · Esc close</div>
+        </div>
+    </div>
+
+    <!-- HISTORY SIDEBAR -->
+    <div class="history-sidebar" id="historySidebar">
+        <div class="history-header">
+            <span>CONVERSATION HISTORY</span>
+            <button class="icon-btn" id="closeHistory"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="history-list" id="historyItems"></div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+
+    <!-- SETTINGS PANEL -->
+    <div class="settings-overlay" id="settingsOverlay"></div>
+    <aside class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            <div class="settings-title">
+                <i class="fas fa-cog"></i>
+                <span>SETTINGS</span>
+            </div>
+            <button class="settings-close" id="settingsClose" title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="settings-body">
+
+            <div class="settings-section">
+                <div class="settings-label">
+                    <i class="fas fa-palette"></i>
+                    <span>Theme</span>
+                </div>
+                <div class="settings-options" data-setting="theme">
+                    <button class="settings-option" data-value="auto">
+                        <i class="fas fa-adjust"></i>
+                        <span>Auto</span>
+                    </button>
+                    <button class="settings-option" data-value="day">
+                        <i class="fas fa-sun"></i>
+                        <span>Day</span>
+                    </button>
+                    <button class="settings-option" data-value="night">
+                        <i class="fas fa-moon"></i>
+                        <span>Night</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-label">
+                    <i class="fas fa-microchip"></i>
+                    <span>AI Model</span>
+                </div>
+                <div class="settings-options" data-setting="model">
+                    <button class="settings-option" data-value="default">
+                        <i class="fas fa-star"></i>
+                        <span>Default</span>
+                    </button>
+                    <button class="settings-option" data-value="fast">
+                        <i class="fas fa-bolt"></i>
+                        <span>Fast</span>
+                    </button>
+                    <button class="settings-option" data-value="smart">
+                        <i class="fas fa-brain"></i>
+                        <span>Smart</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-label">
+                    <i class="fas fa-gauge-high"></i>
+                    <span>Response Speed</span>
+                </div>
+                <div class="settings-slider">
+                    <input type="range" id="speedSlider" min="0" max="100" value="40">
+                    <div class="settings-slider-info">
+                        <span>Instant</span>
+                        <span id="speedValue">40ms</span>
+                        <span>Slow</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-label">
+                    <i class="fas fa-tools"></i>
+                    <span>Actions</span>
+                </div>
+                <div class="settings-actions">
+                    <button class="settings-action-btn" id="clearMemoryBtn">
+                        <i class="fas fa-broom"></i>
+                        <span>Clear Memory</span>
+                    </button>
+                    <button class="settings-action-btn" id="exportChatBtn">
+                        <i class="fas fa-download"></i>
+                        <span>Export Chat</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="settings-section settings-info-section">
+                <div class="settings-info-row">
+                    <span class="settings-info-label">Provider</span>
+                    <span class="settings-info-value" id="settingsProvider">—</span>
+                </div>
+                <div class="settings-info-row">
+                    <span class="settings-info-label">Model</span>
+                    <span class="settings-info-value" id="settingsModel">—</span>
+                </div>
+                <div class="settings-info-row">
+                    <span class="settings-info-label">Version</span>
+                    <span class="settings-info-value">v2.3</span>
+                </div>
+            </div>
+
+        </div>
+    </aside>
+
+    <!-- SCRIPTS -->
+    <script src="/static/script.js"></script>
+</body>
+</html>

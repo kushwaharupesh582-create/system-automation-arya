@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.py[cod]
+tempCodeRunnerFile.python
+database/*.json
+model/graph/HCLG.fst
+model/rescore/G.carpa
